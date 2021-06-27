@@ -2,6 +2,7 @@ name: On every commit
 
 on:
   - push
+  - pull_request
 
 jobs:
   build-and-test:
