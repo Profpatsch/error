@@ -75,6 +75,7 @@ prettyError (Error es) = Text.intercalate ": " es
 --
 -- >>> unwrapError $ Left (newError "oh no!")
 -- *** Exception: oh no!
+-- ...
 --
 -- >>> unwrapError $ Right 42
 -- 42
@@ -94,6 +95,7 @@ unwrapError e = case e of
 -- Example:
 -- >>> expectError "something bad happened" $ Left (newError "oh no!")
 -- *** Exception: something bad happened: oh no!
+-- ...
 --
 -- >>> expectError "something bad happened" $ Right 42
 -- 42
