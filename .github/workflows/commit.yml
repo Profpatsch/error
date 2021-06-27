@@ -1,0 +1,19 @@
+name: On every commit
+
+on:
+  - push
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch repo
+        uses: actions/checkout@v2
+
+      - name: Install nix
+        uses: cachix/install-nix-action@v12
+
+      - name: Build & run tests
+        run: nix-shell --run 'cabal test'
