@@ -100,11 +100,11 @@ unwrapError e = case e of
 -- Example:
 --
 -- @
--- exceptError "something bad happened" $ Left (newError "oh no!")
+-- expectError "something bad happened" $ Left (newError "oh no!")
 --
 -- ==> *** Exception: something bad happened: oh no!
 --
--- exceptError $ Right 42
+-- expectError "something bad happened" $ Right 42
 --
 -- ==> 42
 -- @
