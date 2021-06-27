@@ -53,17 +53,15 @@ addContext e (Error es) = Error $ e : es
 --
 -- Example:
 --
--- @
--- prettyError $ newError "file not found: ./foo"
+-- >>> prettyError $ newError "file not found: ./foo"
+-- "file not found: ./foo"
 --
--- ==> "file not found: ./foo"
---
--- prettyError
---   $ addContext "Trying to open config file"
---     $ newError "file not found: ./foo"
---
--- ==> "Trying to open config file: file not found: ./foo"
--- @
+-- >>> :{
+--   prettyError
+--     $ addContext "Trying to open config file"
+--       $ newError "file not found: ./foo"
+-- :}
+-- "Trying to open config file: file not found: ./foo"
 prettyError :: Error -> Text
 prettyError (Error es) = Text.intercalate ": " es
 
@@ -75,15 +73,11 @@ prettyError (Error es) = Text.intercalate ": " es
 --
 -- Example:
 --
--- @
--- unwrapError $ Left (newError "oh no!")
+-- >>> unwrapError $ Left (newError "oh no!")
+-- *** Exception: oh no!
 --
--- ==> *** Exception: oh no!
---
--- unwrapError $ Right 42
---
--- ==> 42
--- @
+-- >>> unwrapError $ Right 42
+-- 42
 unwrapError :: Either Error p -> p
 unwrapError e = case e of
   Left err -> error (prettyError err & Text.unpack)
@@ -98,16 +92,11 @@ unwrapError e = case e of
 -- Panic: if Error
 --
 -- Example:
+-- >>> expectError "something bad happened" $ Left (newError "oh no!")
+-- *** Exception: something bad happened: oh no!
 --
--- @
--- expectError "something bad happened" $ Left (newError "oh no!")
---
--- ==> *** Exception: something bad happened: oh no!
---
--- expectError "something bad happened" $ Right 42
---
--- ==> 42
--- @
+-- >>> expectError "something bad happened" $ Right 42
+-- 42
 expectError :: Text -> Either Error p -> p
 expectError context e = case e of
   Left err ->
