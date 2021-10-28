@@ -1,17 +1,32 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Data.Error
   ( Error,
+    -- * Error creation
     newError,
+    -- * Adding context
     addContext,
+    -- * Pretty printing
     prettyError,
-    unwrapError,
+    -- * Unsafe unwrapping
+
+    -- | Sometimes you want to assure that an 'Error' could not have happened at runtime,
+    -- even though there is the possibility in the types.
+    -- In that case you can use 'expectError'/'unwrapError'.
+    -- They will panic at runtime if there was an error.
+    --
+    -- 'expectError' should usually be preffered, since it adds a context message.
+    --
+    -- These are modelled after @<https://doc.rust-lang.org/std/result/enum.Result.html#method.expect Result::expect()>@
+    -- and @<https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap Result::unwrap()>@ in the rust stdlib.
     expectError,
+    unwrapError,
   )
 where
 
 import Data.Function ((&))
 import Data.Text (Text)
 import qualified Data.Text as Text
+import GHC.Stack (HasCallStack)
 
 -- | The canonical @Error@ type.
 --
@@ -69,7 +84,7 @@ prettyError (Error es) = Text.intercalate ": " es
 --
 -- Abort with the 'Error's message if it was a 'Left'.
 --
--- Panic: if Error
+-- __Panics__: if Error
 --
 -- Example:
 --
@@ -90,9 +105,10 @@ unwrapError e = case e of
 --
 -- The text message is added to the 'Error' as additional context before aborting.
 --
--- Panic: if Error
+-- __Panics__: if Error
 --
 -- Example:
+--
 -- >>> expectError "something bad happened" $ Left (newError "oh no!")
 -- *** Exception: something bad happened: oh no!
 -- ...
