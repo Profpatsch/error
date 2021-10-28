@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StandaloneDeriving #-}
 module Data.Error
   ( Error,
     -- * Error creation
@@ -43,6 +44,11 @@ import Control.Exception (Exception (displayException))
 -- * more semantic context can be added to an existing @Error@ ('addContext')
 -- * pretty-printed (`prettyError`)
 newtype Error = Error [Text]
+
+-- | The 'Show' instance exists for the user’s convenience on the REPL.
+--
+-- If you want to display an error, use 'prettyError' instead.
+deriving instance Show Error
 
 -- | Create an ad-hoc 'Error' from an error message.
 newError :: Text -> Error
