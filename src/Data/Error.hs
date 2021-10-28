@@ -79,7 +79,7 @@ prettyError (Error es) = Text.intercalate ": " es
 --
 -- >>> unwrapError $ Right 42
 -- 42
-unwrapError :: Either Error p -> p
+unwrapError :: HasCallStack => Either Error p -> p
 unwrapError e = case e of
   Left err -> error (prettyError err & Text.unpack)
   Right a -> a
@@ -99,7 +99,7 @@ unwrapError e = case e of
 --
 -- >>> expectError "something bad happened" $ Right 42
 -- 42
-expectError :: Text -> Either Error p -> p
+expectError :: HasCallStack => Text -> Either Error p -> p
 expectError context e = case e of
   Left err ->
     error
