@@ -1,12 +1,11 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? import <nixpkgs> {}}:
 
-let error = pkgs.haskellPackages.callCabal2nix "error" ./error.cabal {};
-
-in pkgs.haskellPackages.shellFor {
-  packages = p: [
-    error
+pkgs.haskellPackages.shellFor {
+  packages = hps: [
+    (hps.callCabal2nix "error" (pkgs.nix-gitignore.gitignoreSource [".git"] ./.) {})
   ];
   buildInputs = [
     pkgs.cabal-install
+    pkgs.haskell-language-server
   ];
 }
