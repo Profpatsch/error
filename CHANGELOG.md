@@ -1,8 +1,14 @@
 # Revision history for error
 
+## 0.2.1.0 -- 2021-11-13
+
+* Add `expectErrorIO` and `unwrapErrorIO`.
+* Add `ifIOError` and `ifError`.
+
 ## 0.2.0.0 -- 2021-10-29
 
 * Add `Show` instance to `Error`.
+
 ## 0.1.1.0 -- 2021-10-28
 
 * Add `HasCallStack` to `expectError` and `unwrapError`.

@@ -1,5 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ExplicitForAll #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE LambdaCase #-}
 module Data.Error
   ( Error,
     -- * Error creation
@@ -18,15 +23,24 @@ module Data.Error
 
     -- | Sometimes you want to assure that an 'Error' could not have happened at runtime,
     -- even though there is the possibility in the types.
-    -- In that case you can use 'expectError'/'unwrapError'.
-    -- They will panic at runtime if there was an error.
     --
-    -- 'expectError' should usually be preffered, since it adds a context message.
+    -- In that case you can use 'expectError'/'unwrapError'.
+    -- They will panic at runtime (via 'error') if there was an error.
+    --
+    -- You can also use 'expectIOError'/'unwrapIOError' if your code is in 'IO',
+    -- which will crash with 'Exc.throwIO' instead of 'error'.
+    --
+    -- 'expectError'/'expectIOError' should usually be preferred, since it adds a context message.
     --
     -- These are modelled after @<https://doc.rust-lang.org/std/result/enum.Result.html#method.expect Result::expect()>@
     -- and @<https://doc.rust-lang.org/std/result/enum.Result.html#method.unwrap Result::unwrap()>@ in the rust stdlib.
     expectError,
     unwrapError,
+    expectIOError,
+    unwrapIOError,
+    -- * Catching @Exceptions@ in 'IO'
+    ifIOError,
+    ifError
   )
 where
 
@@ -35,6 +49,9 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import GHC.Stack (HasCallStack)
 import Control.Exception (Exception (displayException))
+import qualified Control.Exception as Exc
+import Data.Functor ((<&>))
+import Data.Bifunctor (first)
 
 -- | The canonical @Error@ type.
 --
@@ -114,7 +131,7 @@ prettyError (Error es) = Text.intercalate ": " es
 --
 -- Abort with the 'Error's message if it was a 'Left'.
 --
--- __Panics__: if Error
+-- __Panics:__ if Error
 --
 -- Example:
 --
@@ -124,7 +141,7 @@ prettyError (Error es) = Text.intercalate ": " es
 --
 -- >>> unwrapError $ Right 42
 -- 42
-unwrapError :: HasCallStack => Either Error p -> p
+unwrapError :: HasCallStack => Either Error a -> a
 unwrapError e = case e of
   Left err -> error (prettyError err & Text.unpack)
   Right a -> a
@@ -135,7 +152,7 @@ unwrapError e = case e of
 --
 -- The text message is added to the 'Error' as additional context before aborting.
 --
--- __Panics__: if Error
+-- __Panics:__ if Error
 --
 -- Example:
 --
@@ -155,3 +172,103 @@ expectError context e = case e of
           & Text.unpack
       )
   Right a -> a
+
+-- | This Exception is not exported so that it’s impossible to catch and handle via 'Typeable'.
+newtype ErrorException = ErrorException Error
+
+-- | Show the pretty printed string without quotes.
+instance Show ErrorException where
+  showsPrec i (ErrorException err) = showString (err & prettyError & Text.unpack)
+instance Exception ErrorException where
+  displayException = show
+
+-- | Like 'unwrapError', but instead of using 'error', it will 'Exc.throwIO' the pretty-printed error.
+--
+-- The advantage over `unwrapError` is that it crashes immediately, and not just when the 'Either' is forced,
+-- leading to a deterministic immediate abortion of your IO code
+-- (<https://github.com/ghc-proposals/ghc-proposals/pull/330 but no stack trace can be produced at the moment!>).
+--
+-- __Throws opaque Exception:__ if Error
+--
+-- Example:
+--
+-- >>> unwrapIOError $ Left (newError "oh no!")
+-- oh no!
+--
+-- Important: 'Error' itself does /not/ implement 'Exception' to discourage the exception workflow.
+-- The 'Exception' thrown is private to this module and thus can’t be “caught” in a typed manner.
+-- If you use this function, you either have to catch 'Exc.SomeException', or it will bubble up and lead to
+-- your program crashing.
+unwrapIOError :: Either Error a -> IO a
+unwrapIOError = \case
+  Left err -> Exc.throwIO $ ErrorException err
+  Right a -> pure a
+
+-- | Like 'expectError', but instead of using 'error', it will 'Exc.throwIO' the pretty-printed error.
+--
+-- The advantage over `expectError` is that it crashes immediately, and not just when the 'Either' is forced,
+-- leading to a deterministic immediate abortion of your IO code
+-- (<https://github.com/ghc-proposals/ghc-proposals/pull/330 but no stack trace can be produced at the moment!>).
+--
+--
+-- __Throws opaque Exception:__ if Error
+--
+-- Example:
+--
+-- >>> expectIOError "something bad happened" $ Left (newError "oh no!")
+-- something bad happened: oh no!
+--
+-- Important: 'Error' itself does /not/ implement 'Exception' to discourage the exception workflow.
+-- The 'Exception' thrown is private to this module and thus can’t be “caught” in a typed manner.
+-- If you use this function, you either have to catch 'Exc.SomeException', or it will bubble up and lead to
+-- your program crashing.
+expectIOError :: Text -> Either Error a -> IO a
+expectIOError context = \case
+  Left err -> Exc.throwIO $ ErrorException (addContext context err)
+  Right a -> pure a
+
+-- | Catch any 'Exc.IOException's thrown by an @IO a@ as @Either Error a@.
+--
+-- The IOException is converted to an error with 'exceptionToError', and the given message
+-- is added with 'addContext'. This prevents the common pattern of bubbling up exceptions
+-- without any context.
+--
+-- >>> ifIOError "could not open file" (Control.Exception.throwIO (userError "oh noes!"))
+-- Left (Error ["could not open file","user error (oh noes!)"])
+--
+-- It can then be handled like a normal 'Error'.
+--
+-- The function lends itself to piping with '(&)':
+--
+-- >>> Control.Exception.throwIO (userError "oh noes!") & ifIOError "could not open file"
+-- Left (Error ["could not open file","user error (oh noes!)"])
+--
+-- and if you just want to annotate the error and directly throw it again:
+--
+-- >>> Control.Exception.throwIO (userError "oh noes!") & ifIOError "could not open file" >>= unwrapIOError
+-- could not open file: user error (oh noes!)
+ifIOError :: Text -> IO a -> IO (Either Error a)
+ifIOError = ifError @Exc.IOException
+
+-- | Catch any 'Exc.Exception's thrown by an @IO a@ as @Either Error a@.
+--
+-- The IOException is converted to an error with 'exceptionToError', and the given message
+-- is added with 'addContext'. This prevents the common pattern of bubbling up exceptions
+-- without any context.
+--
+-- Use @TypeApplications@ to specify the 'Exception' you want to catch.
+--
+-- >>> ifError @Exc.ArithException "arithmetic exception" (putStr $ show $ 1 Data.Ratio.% 0)
+-- Left (Error ["arithmetic exception","Ratio has zero denominator"])
+--
+-- It can then be handled like a normal 'Error'.
+--
+-- The function lends itself to piping with '(&)':
+--
+-- >>> (putStr $ show $ 1 Data.Ratio.% 0) & ifError @Exc.ArithException "arithmetic exception"
+-- Left (Error ["arithmetic exception","Ratio has zero denominator"])
+--
+-- Bear in mind that pure exceptions are only raised when the resulting code is forced
+-- (thus the @putStrLn $ show@ in the above example).
+ifError :: forall exc a. (Exception exc) => Text -> IO a -> IO (Either Error a)
+ifError context io = Exc.try @exc io <&> first (addContext context . exceptionToError)
