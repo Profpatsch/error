@@ -1,5 +1,9 @@
 # Revision history for error
 
+## 0.2.1.1 -- 2021-11-14
+
+* Make compatible with GHC 8.0.2 again by not using `<&>`.
+
 ## 0.2.1.0 -- 2021-11-13
 
 * Add `expectErrorIO` and `unwrapErrorIO`.

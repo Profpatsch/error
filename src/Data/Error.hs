@@ -50,7 +50,6 @@ import qualified Data.Text as Text
 import GHC.Stack (HasCallStack)
 import Control.Exception (Exception (displayException))
 import qualified Control.Exception as Exc
-import Data.Functor ((<&>))
 import Data.Bifunctor (first)
 
 -- | The canonical @Error@ type.
@@ -271,4 +270,4 @@ ifIOError = ifError @Exc.IOException
 -- Bear in mind that pure exceptions are only raised when the resulting code is forced
 -- (thus the @putStrLn $ show@ in the above example).
 ifError :: forall exc a. (Exception exc) => Text -> IO a -> IO (Either Error a)
-ifError context io = Exc.try @exc io <&> first (addContext context . exceptionToError)
+ifError context io = first (addContext context . exceptionToError) <$> Exc.try @exc io
