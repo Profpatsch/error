@@ -192,7 +192,7 @@ instance Exception ErrorException where
 -- Example:
 --
 -- >>> unwrapIOError $ Left (newError "oh no!")
--- oh no!
+-- *** Exception: oh no!
 --
 -- Important: 'Error' itself does /not/ implement 'Exception' to discourage the exception workflow.
 -- The 'Exception' thrown is private to this module and thus can’t be “caught” in a typed manner.
@@ -215,7 +215,7 @@ unwrapIOError = \case
 -- Example:
 --
 -- >>> expectIOError "something bad happened" $ Left (newError "oh no!")
--- something bad happened: oh no!
+-- *** Exception: something bad happened: oh no!
 --
 -- Important: 'Error' itself does /not/ implement 'Exception' to discourage the exception workflow.
 -- The 'Exception' thrown is private to this module and thus can’t be “caught” in a typed manner.
@@ -245,7 +245,7 @@ expectIOError context = \case
 -- and if you just want to annotate the error and directly throw it again:
 --
 -- >>> Control.Exception.throwIO (userError "oh noes!") & ifIOError "could not open file" >>= unwrapIOError
--- could not open file: user error (oh noes!)
+-- *** Exception: could not open file: user error (oh noes!)
 ifIOError :: Text -> IO a -> IO (Either Error a)
 ifIOError = ifError @Exc.IOException
 
@@ -257,6 +257,7 @@ ifIOError = ifError @Exc.IOException
 --
 -- Use @TypeApplications@ to specify the 'Exception' you want to catch.
 --
+-- >>> :set -XTypeApplications
 -- >>> ifError @Exc.ArithException "arithmetic exception" (putStr $ show $ 1 Data.Ratio.% 0)
 -- Left (Error ["arithmetic exception","Ratio has zero denominator"])
 --
