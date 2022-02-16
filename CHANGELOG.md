@@ -4,6 +4,13 @@
 
 * Add `IsString` instance for `Error`.
 
+* Breaking: Rename `addContext` to `errorContext`.
+
+  Since `Data.Error` is expected to be imported unqualified,
+  `addContext` was not super obviously related to error handling.
+  `errorContext` is a lot clearer.
+  This is hopefully the last big breaking change before `1.0`.
+
 ## 0.2.1.2 -- 2021-11-15
 
 * Fix doctests.
