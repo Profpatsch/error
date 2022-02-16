@@ -51,6 +51,7 @@ import GHC.Stack (HasCallStack)
 import Control.Exception (Exception (displayException))
 import qualified Control.Exception as Exc
 import Data.Bifunctor (first)
+import Data.String (IsString (fromString))
 
 -- | The canonical @Error@ type.
 --
@@ -65,6 +66,15 @@ newtype Error = Error [Text]
 --
 -- If you want to display an error, use 'prettyError' instead.
 deriving instance Show Error
+
+-- | This makes it possible to treat any literal string as 'Error' (with @OverloadedStrings@ enabled).
+--
+-- >>> prettyError $ addContext "oops" $ "my Error"
+-- "oops: my Error"
+--
+-- No 'newError' necessary!
+instance IsString Error where
+  fromString = newError . Text.pack
 
 -- | Create an ad-hoc 'Error' from an error message.
 newError :: Text -> Error

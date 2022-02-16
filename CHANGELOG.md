@@ -1,5 +1,9 @@
 # Revision history for error
 
+## 0.3.0.0 -- 2022-02-16
+
+* Add `IsString` instance for `Error`.
+
 ## 0.2.1.2 -- 2021-11-15
 
 * Fix doctests.
