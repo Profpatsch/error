@@ -1,5 +1,9 @@
 # Revision history for error
 
+## 1.0.0.0 -- 2022-10-09
+
+* No changes, just signify that the library is stable now.
+
 ## 0.3.0.0 -- 2022-02-16
 
 * Add `IsString` instance for `Error`.

@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               error
-version:            0.3.0.0
+version:            1.0.0.0
 
 synopsis: The canonical error type
 
@@ -18,7 +18,7 @@ license-file: LICENSE
 
 author: Profpatsch
 maintainer: Profpatsch <mail@profpatsch.de>
-copyright: 2021 Profpatsch
+copyright: 2021-2022 Profpatsch
 
 extra-source-files:
     CHANGELOG.md

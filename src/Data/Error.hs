@@ -5,6 +5,15 @@
 {-# LANGUAGE ExplicitForAll #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE LambdaCase #-}
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Data.Error
+-- Copyright   :  (C) 2021-2022 Profpatsch
+-- License     :  MIT
+-- Maintainer  :  Profpatsch <mail@profpatsch.de>
+-- Stability   :  stable
+-- Portability :  portable
+--------------------------------------------------------------------------------
 module Data.Error
   ( Error,
     -- * Error creation
@@ -182,7 +191,7 @@ expectError context e = case e of
       )
   Right a -> a
 
--- | This Exception is not exported so that it’s impossible to catch and handle via 'Typeable'.
+-- | This Exception is not exported so that it’s impossible to catch and handle via 'Data.Typeable.Typeable'.
 newtype ErrorException = ErrorException Error
 
 -- | Show the pretty printed string without quotes.
